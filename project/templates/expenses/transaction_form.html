@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-6 col-lg-8">
+        <div class="card-premium">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{% url 'expense-list' %}" class="btn-premium btn-premium-secondary py-2 px-3 text-sm">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="m-0 text-xl font-outfit">{{ title }}</h2>
+            </div>
+            
+            <form method="POST" class="needs-validation">
+                {% csrf_token %}
+                
+                <!-- Transaction Type Toggle -->
+                <div class="mb-4">
+                    <label class="form-label-premium">Transaction Type</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="transaction_type" id="type-expense" value="expense" {% if form.instance.transaction_type == 'expense' or not form.instance.pk %}checked{% endif %}>
+                        <label class="btn btn-outline-danger w-50 py-2 fw-bold" for="type-expense">
+                            <i class="fas fa-circle-up me-2"></i>Expense
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="transaction_type" id="type-income" value="income" {% if form.instance.transaction_type == 'income' %}checked{% endif %}>
+                        <label class="btn btn-outline-success w-50 py-2 fw-bold" for="type-income">
+                            <i class="fas fa-circle-down me-2"></i>Income
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Amount field -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.amount.id_for_label }}">Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-primary fw-bold">$</span>
+                        <input type="number" name="amount" step="0.01" class="form-control border-start-0 ps-1 {% if form.amount.errors %}is-invalid{% endif %}" id="{{ form.amount.id_for_label }}" value="{{ form.amount.value|default:'' }}" required>
+                        {% if form.amount.errors %}
+                            <div class="invalid-feedback">{{ form.amount.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Category field -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.category.id_for_label }}">Category</label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="invalid-feedback d-block">{{ form.category.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Date field -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.date.id_for_label }}">Date</label>
+                    {{ form.date }}
+                    {% if form.date.errors %}
+                        <div class="invalid-feedback d-block">{{ form.date.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Payment Method field -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.payment_method.id_for_label }}">Payment Method</label>
+                    <select name="payment_method" id="{{ form.payment_method.id_for_label }}" class="form-select">
+                        <option value="Cash" {% if form.payment_method.value == 'Cash' %}selected{% endif %}>Cash</option>
+                        <option value="Credit Card" {% if form.payment_method.value == 'Credit Card' %}selected{% endif %}>Credit Card</option>
+                        <option value="Debit Card" {% if form.payment_method.value == 'Debit Card' %}selected{% endif %}>Debit Card</option>
+                        <option value="Bank Transfer" {% if form.payment_method.value == 'Bank Transfer' %}selected{% endif %}>Bank Transfer</option>
+                        <option value="Mobile Payment" {% if form.payment_method.value == 'Mobile Payment' %}selected{% endif %}>Mobile Payment</option>
+                    </select>
+                    {% if form.payment_method.errors %}
+                        <div class="invalid-feedback d-block">{{ form.payment_method.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Description field -->
+                <div class="form-group-premium mb-4">
+                    <label class="form-label-premium" for="{{ form.description.id_for_label }}">Description / Notes</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="invalid-feedback d-block">{{ form.description.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Recurring Transaction Checkbox -->
+                <div class="card-premium p-3 bg-secondary bg-opacity-10 mb-4">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" role="switch" name="is_recurring" id="id_is_recurring" {% if form.is_recurring.value %}checked{% endif %}>
+                        <label class="form-check-label fw-bold text-sm" for="id_is_recurring">Set as Recurring Transaction</label>
+                    </div>
+                    
+                    <div id="recurrence-frequency-wrapper" class="mt-3" style="display: none;">
+                        <label class="form-label-premium" for="{{ form.recurrence_frequency.id_for_label }}">Frequency</label>
+                        {{ form.recurrence_frequency }}
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end gap-3">
+                    <a href="{% url 'expense-list' %}" class="btn-premium btn-premium-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-premium btn-premium-primary">
+                        Save Transaction
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const recurringSwitch = document.getElementById('id_is_recurring');
+        const frequencyWrapper = document.getElementById('recurrence-frequency-wrapper');
+        
+        function toggleFrequency() {
+            if (recurringSwitch.checked) {
+                frequencyWrapper.style.display = 'block';
+            } else {
+                frequencyWrapper.style.display = 'none';
+            }
+        }
+        
+        recurringSwitch.addEventListener('change', toggleFrequency);
+        toggleFrequency(); // Initial state check
+        
+        // Dynamically style based on transaction type selection
+        const typeExpense = document.getElementById('type-expense');
+        const typeIncome = document.getElementById('type-income');
+        const categoryWrapper = document.getElementById('id_category').parentElement;
+        
+        function updateCategoryRequirement() {
+            if (typeIncome.checked) {
+                // Category is optional for income, or we can suggest it
+                // Optional styling could go here
+            }
+        }
+        
+        typeExpense.addEventListener('change', updateCategoryRequirement);
+        typeIncome.addEventListener('change', updateCategoryRequirement);
+        updateCategoryRequirement();
+    });
+</script>
+{% endblock %}

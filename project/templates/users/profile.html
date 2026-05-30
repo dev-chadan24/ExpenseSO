@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="m-0 text-xl font-outfit">Account Settings</h2>
+    <p class="text-sm text-secondary m-0">Manage profile details, system preferences, and security options</p>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Navigation Tabs & Overview -->
+    <div class="col-lg-4">
+        <div class="card-premium text-center mb-4">
+            <div class="position-relative d-inline-block mx-auto mb-3">
+                <img src="{{ user.profile.image.url }}" alt="Profile Avatar" class="rounded-circle border border-3 border-primary shadow-sm" width="120" height="120" style="object-fit: cover;" id="profile-avatar-preview">
+            </div>
+            <h3 class="text-md fw-bold mb-1">{{ user.username }}</h3>
+            <span class="text-xs text-muted fw-bold">{{ user.email }}</span>
+            
+            {% if user.profile.bio %}
+                <p class="text-sm text-secondary mt-3 px-2 italic">{{ user.profile.bio }}</p>
+            {% endif %}
+            
+            <div class="border-top border-secondary border-opacity-10 my-3"></div>
+            
+            <div class="text-start px-2">
+                <div class="d-flex justify-content-between text-xs mb-2">
+                    <span class="text-secondary fw-semibold">Currency Choice</span>
+                    <span class="fw-bold text-primary">{{ user.profile.currency }} ({{ user.profile.get_currency_symbol }})</span>
+                </div>
+                <div class="d-flex justify-content-between text-xs">
+                    <span class="text-secondary fw-semibold">Monthly Budget</span>
+                    <span class="fw-bold text-primary">{{ user.profile.get_currency_symbol }}{{ user.profile.monthly_budget|intcomma }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tab menu list mock/helper -->
+        <div class="list-group card-premium p-2 border-0">
+            <button class="list-group-item list-group-item-action border-0 rounded-3 py-3 px-3 active text-start fw-bold" id="btn-tab-profile">
+                <i class="fas fa-user-gear me-3"></i>Profile Details
+            </button>
+            <button class="list-group-item list-group-item-action border-0 rounded-3 py-3 px-3 mt-1 text-start fw-bold" id="btn-tab-security" style="color: var(--text-secondary); background: transparent;">
+                <i class="fas fa-shield-halved me-3"></i>Security & Password
+            </button>
+        </div>
+    </div>
+    
+    <!-- Right Column: Form Panel -->
+    <div class="col-lg-8">
+        <!-- Section 1: Profile & Preferences Form -->
+        <div class="card-premium h-100" id="section-profile">
+            <h4 class="text-md fw-bold mb-4">Edit Profile & Preferences</h4>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Username</label>
+                        {{ u_form.username }}
+                        {% if u_form.username.errors %}
+                            <div class="invalid-feedback d-block">{{ u_form.username.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Email Address</label>
+                        {{ u_form.email }}
+                        {% if u_form.email.errors %}
+                            <div class="invalid-feedback d-block">{{ u_form.email.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Phone Number</label>
+                        {{ p_form.phone }}
+                        {% if p_form.phone.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.phone.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Preferred Currency</label>
+                        {{ p_form.currency }}
+                        {% if p_form.currency.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.currency.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Monthly Budget Limit</label>
+                        {{ p_form.monthly_budget }}
+                        {% if p_form.monthly_budget.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.monthly_budget.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label-premium">Theme Mode</label>
+                        {{ p_form.theme_preference }}
+                        {% if p_form.theme_preference.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.theme_preference.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label-premium">Bio Description</label>
+                        {{ p_form.bio }}
+                        {% if p_form.bio.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.bio.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label-premium">Profile Avatar Picture</label>
+                        {{ p_form.image }}
+                        {% if p_form.image.errors %}
+                            <div class="invalid-feedback d-block">{{ p_form.image.errors.as_text }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end gap-3 mt-4 border-top border-secondary border-opacity-10 pt-4">
+                    <button type="submit" name="update_profile" class="btn-premium btn-premium-primary">
+                        Save Preferences
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Section 2: Security & Password Update -->
+        <div class="card-premium h-100" id="section-security" style="display: none;">
+            <h4 class="text-md fw-bold mb-4">Change Secure Password</h4>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    {% for field in password_form %}
+                        <div class="col-12">
+                            <label class="form-label-premium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control-premium" required>
+                            {% if field.help_text %}
+                                <span class="text-xs text-secondary mt-1 d-block">{{ field.help_text|safe }}</span>
+                            {% endif %}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors.as_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-end gap-3 mt-4 border-top border-secondary border-opacity-10 pt-4">
+                    <button type="submit" name="change_password" class="btn-premium btn-premium-primary">
+                        Update Password
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btnTabProfile = document.getElementById('btn-tab-profile');
+        const btnTabSecurity = document.getElementById('btn-tab-security');
+        const sectionProfile = document.getElementById('section-profile');
+        const sectionSecurity = document.getElementById('section-security');
+        
+        btnTabProfile.addEventListener('click', () => {
+            btnTabProfile.classList.add('active');
+            btnTabProfile.style.color = '';
+            btnTabProfile.style.background = '';
+            
+            btnTabSecurity.classList.remove('active');
+            btnTabSecurity.style.color = 'var(--text-secondary)';
+            btnTabSecurity.style.background = 'transparent';
+            
+            sectionProfile.style.display = 'block';
+            sectionSecurity.style.display = 'none';
+        });
+        
+        btnTabSecurity.addEventListener('click', () => {
+            btnTabSecurity.classList.add('active');
+            btnTabSecurity.style.color = '';
+            btnTabSecurity.style.background = '';
+            
+            btnTabProfile.classList.remove('active');
+            btnTabProfile.style.color = 'var(--text-secondary)';
+            btnTabProfile.style.background = 'transparent';
+            
+            sectionProfile.style.display = 'none';
+            sectionSecurity.style.display = 'block';
+        });
+        
+        // Simple avatar image preview on upload select
+        const avatarInput = document.querySelector('input[type="file"]');
+        const avatarPreview = document.getElementById('profile-avatar-preview');
+        
+        if (avatarInput && avatarPreview) {
+            avatarInput.addEventListener('change', () => {
+                const file = avatarInput.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        avatarPreview.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

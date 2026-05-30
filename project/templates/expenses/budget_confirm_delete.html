@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Budget{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-5 col-lg-7 col-md-9">
+        <div class="card-premium border-danger">
+            <div class="text-center mb-4">
+                <div class="stat-icon-wrapper stat-icon-danger rounded-circle mx-auto mb-3" style="width: 60px; height: 60px;">
+                    <i class="fas fa-trash-can fa-lg"></i>
+                </div>
+                <h2 class="m-0 text-xl font-outfit text-danger">Delete Budget Limit?</h2>
+                <p class="text-sm text-secondary mt-1">This action cannot be undone. You will lose the tracking threshold limit set on this category for this month.</p>
+            </div>
+            
+            <div class="card-premium bg-secondary bg-opacity-10 p-3 mb-4 text-center">
+                <div class="stat-icon-wrapper rounded-circle mx-auto mb-2" style="background-color: {{ budget.category.color }}15; color: {{ budget.category.color }}; width: 48px; height: 48px;">
+                    <i class="fas {{ budget.category.icon|default:'fa-ellipsis-h' }}"></i>
+                </div>
+                <h4 class="text-md fw-bold m-0" style="color: {{ budget.category.color }};">{{ budget.category.name }} Limit</h4>
+                <span class="text-xs text-muted fw-bold">{{ budget.month|date:"F Y" }}</span>
+                <div class="mt-2 fw-bold text-lg text-primary">{{ budget.user.profile.get_currency_symbol }}{{ budget.amount|intcomma }}</div>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                <div class="d-flex gap-3">
+                    <a href="{% url 'budget-list' %}" class="btn-premium btn-premium-secondary w-50 justify-content-center">
+                        No, Keep it
+                    </a>
+                    <button type="submit" class="btn-premium btn-premium-danger w-50 justify-content-center">
+                        Yes, Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

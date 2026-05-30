@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-5 col-lg-7 col-md-9">
+        <div class="card-premium">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{% url 'category-list' %}" class="btn-premium btn-premium-secondary py-2 px-3 text-sm">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="m-0 text-xl font-outfit">{{ title }}</h2>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Category Name -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.name.id_for_label }}">Category Name</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">{{ form.name.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Icon Choice Selector -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.icon.id_for_label }}">Category Icon</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-wrapper rounded-circle border border-secondary border-opacity-25" id="category-icon-preview" style="width: 45px; height: 45px; font-size: 1.15rem; background-color: var(--bg-input);">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            {{ form.icon }}
+                        </div>
+                    </div>
+                    {% if form.icon.errors %}
+                        <div class="invalid-feedback d-block">{{ form.icon.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Color picker -->
+                <div class="form-group-premium mb-4">
+                    <label class="form-label-premium" for="{{ form.color.id_for_label }}">Category Theme Color</label>
+                    {{ form.color }}
+                    <span class="text-xs text-secondary mt-1 d-block">Used for charts and labels. Click the box to pick a color.</span>
+                    {% if form.color.errors %}
+                        <div class="invalid-feedback d-block">{{ form.color.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    <a href="{% url 'category-list' %}" class="btn-premium btn-premium-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-premium btn-premium-primary">
+                        Save Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const iconSelect = document.getElementById('id_icon');
+        const previewWrapper = document.getElementById('category-icon-preview');
+        const colorInput = document.getElementById('id_color');
+        
+        function updateIconPreview() {
+            const selectedIcon = iconSelect.value;
+            const iconElement = previewWrapper.querySelector('i');
+            if (iconElement) {
+                iconElement.className = `fas ${selectedIcon}`;
+            }
+        }
+        
+        function updateColorPreview() {
+            previewWrapper.style.color = colorInput.value;
+            previewWrapper.style.backgroundColor = colorInput.value + '15'; // 15% opacity hex
+            previewWrapper.style.borderColor = colorInput.value + '40';
+        }
+        
+        iconSelect.addEventListener('change', updateIconPreview);
+        colorInput.addEventListener('input', updateColorPreview);
+        colorInput.addEventListener('change', updateColorPreview);
+        
+        // Initial setup
+        updateIconPreview();
+        updateColorPreview();
+    });
+</script>
+{% endblock %}

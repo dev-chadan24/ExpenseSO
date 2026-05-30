@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <!-- Left Panel: Branding & Marketing -->
+    <div class="auth-sidebar d-none d-lg-flex">
+        <div>
+            <a href="#" class="sidebar-logo text-white text-decoration-none">
+                <i class="fas fa-wallet"></i> FinTrack
+            </a>
+        </div>
+        
+        <div class="my-5">
+            <h1 class="text-white display-5 fw-bold mb-3 font-outfit" style="max-width: 480px; line-height: 1.15;">Start your tracking journey today.</h1>
+            <p class="text-white text-opacity-75 text-md" style="max-width: 420px; line-height: 1.6;">Register a secure account, select your preferred local currency, and begin allocating custom monthly budgets.</p>
+        </div>
+        
+        <div class="text-xs text-white text-opacity-50">
+            &copy; 2026 FinTrack Inc. All rights reserved.
+        </div>
+    </div>
+    
+    <!-- Right Panel: Auth form -->
+    <div class="auth-content">
+        <div class="auth-card">
+            <div class="text-center mb-4 d-lg-none">
+                <h2 class="text-primary font-outfit fw-bold mb-1"><i class="fas fa-wallet"></i> FinTrack</h2>
+            </div>
+            
+            <div class="card-premium glass-panel p-4 shadow-xl">
+                <h3 class="font-outfit fw-bold mb-1">Create Account</h3>
+                <p class="text-sm text-secondary mb-4">Start managing your personal finances in seconds</p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="form-group-premium mb-3">
+                            <label class="form-label-premium" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">{{ field.errors.as_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="btn-premium btn-premium-primary w-100 justify-content-center py-2 mb-3 mt-4">
+                        Register Account
+                    </button>
+                    
+                    <div class="text-center text-xs text-secondary mt-3">
+                        Already have an account? <a href="{% url 'login' %}" class="fw-bold text-decoration-none">Sign in</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Logged Out{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper align-items-center justify-content-center">
+    <div class="auth-card">
+        <div class="card-premium glass-panel text-center p-5 shadow-xl">
+            <div class="stat-icon-wrapper rounded-circle mx-auto mb-3" style="background-color: rgba(79, 70, 229, 0.1); color: var(--primary); width: 64px; height: 64px;">
+                <i class="fas fa-right-from-bracket fa-lg"></i>
+            </div>
+            
+            <h2 class="font-outfit fw-bold mb-2">Signed Out</h2>
+            <p class="text-sm text-secondary mb-4">You have been safely and successfully logged out of your session.</p>
+            
+            <a href="{% url 'login' %}" class="btn-premium btn-premium-primary w-100 justify-content-center py-2">
+                Sign In Again
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Budgets{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="m-0 text-xl font-outfit">Budgets</h2>
+        <p class="text-sm text-secondary m-0">Define category limits and monitor your spending</p>
+    </div>
+    <a href="{% url 'add-budget' %}" class="btn-premium btn-premium-primary">
+        <i class="fas fa-plus"></i> Set Budget
+    </a>
+</div>
+
+{% if budgets %}
+    <div class="row g-4">
+        {% for item in budgets %}
+            <div class="col-xl-4 col-md-6">
+                <div class="card-premium h-100" style="border-top: 4px solid {{ item.budget.category.color }};">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon-wrapper rounded-circle" style="background-color: {{ item.budget.category.color }}15; color: {{ item.budget.category.color }}; width: 44px; height: 44px;">
+                                <i class="fas {{ item.budget.category.icon|default:'fa-ellipsis-h' }}"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-md fw-bold m-0 text-primary">{{ item.budget.category.name }}</h4>
+                                <span class="text-xs text-muted fw-semibold">{{ item.budget.month|date:"F Y" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="dropdown">
+                            <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-ellipsis-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="background-color: var(--bg-card);">
+                                <li><a class="dropdown-item py-2 text-sm text-secondary" href="{% url 'update-budget' item.budget.pk %}"><i class="fas fa-pencil me-2"></i>Edit</a></li>
+                                <li><a class="dropdown-item py-2 text-sm text-danger" href="{% url 'delete-budget' item.budget.pk %}"><i class="fas fa-trash me-2"></i>Delete</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-baseline mb-2">
+                        <span class="text-sm text-secondary">Spent</span>
+                        <div>
+                            <span class="fw-bold text-lg text-primary">{{ currency }}{{ item.spent|intcomma }}</span>
+                            <span class="text-xs text-muted">/ {{ currency }}{{ item.budget.amount|intcomma }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="budget-progress-bar-container mb-3">
+                        <div class="budget-progress-bar" style="width: {{ item.percentage }}%; background-color: {% if item.spent > item.budget.amount %}var(--danger){% else %}{{ item.budget.category.color }}{% endif %};"></div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center text-xs">
+                        <span class="fw-bold {% if item.spent > item.budget.amount %}text-danger{% else %}text-success{% endif %}">
+                            {% if item.spent > item.budget.amount %}
+                                <i class="fas fa-circle-exclamation me-1"></i> Over budget by {{ currency }}{{ item.over_spent|floatformat:2|intcomma }}
+                            {% else %}
+                                <i class="fas fa-circle-check me-1"></i> Within budget limits
+                            {% endif %}
+                        </span>
+                        <span class="text-muted fw-bold">{{ item.percentage }}% Used</span>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="text-center py-5 text-muted card-premium">
+        <i class="fas fa-bullseye fa-4x mb-3 text-secondary opacity-25"></i>
+        <h5>No Budgets Set</h5>
+        <p class="text-sm mb-4">You haven't defined any spending category budgets yet.</p>
+        <a href="{% url 'add-budget' %}" class="btn-premium btn-premium-primary text-sm">Set Budget</a>
+    </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- Simple sub filter mock in Javascript if necessary, but we can compute inside the template safely using django templates filters if we write it as views data. Wait! We have subtraction filters or we can calculate remaining in view.
+Yes, we calculated `item.remaining` in `views.py`:
+`'remaining': max(budget.amount - spent, 0)`
+Let's add over_budget_amount to budget_list view too just to be consistent!
+Wait, in `views.py` budget_list we have:
+`budget_data.append({'budget': budget, 'spent': spent, 'percentage': percentage, 'remaining': max(budget.amount - spent, 0)})`
+We can also add `'over_spent': max(spent - budget.amount, 0)`.
+Let's update views.py first to include `'over_spent': max(spent - budget.amount, 0)`.
+Let's look at views.py line 273:
+-->
+{% endblock %}

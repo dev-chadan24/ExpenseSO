@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <!-- Stat card 1: Income -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-premium hover-success">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Total Income</span>
+                    <span class="stat-value counter-anim" data-target="{{ currency }}{{ total_income|floatformat:2|intcomma }}">{{ currency }}0.00</span>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-success">
+                    <i class="fas fa-arrow-trend-up"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat card 2: Expense -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-premium hover-danger">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Total Expenses</span>
+                    <span class="stat-value counter-anim" data-target="{{ currency }}{{ total_expense|floatformat:2|intcomma }}">{{ currency }}0.00</span>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-danger">
+                    <i class="fas fa-arrow-trend-down"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat card 3: Net Savings -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-premium hover-primary">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Net Savings</span>
+                    <span class="stat-value counter-anim" data-target="{{ currency }}{{ net_savings|floatformat:2|intcomma }}">{{ currency }}0.00</span>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-primary">
+                    <i class="fas fa-wallet"></i>
+                </div>
+            </div>
+            <div class="text-xs mt-2 {% if savings_rate >= 20 %}text-success{% else %}text-warning{% endif %} fw-bold">
+                <i class="fas fa-circle-check me-1"></i> Savings Rate: {{ savings_rate }}%
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stat card 4: Monthly Budget Used -->
+    <div class="col-xl-3 col-sm-6">
+        <div class="card-premium {% if budget_used_percentage > 90 %}hover-danger{% else %}hover-primary{% endif %}">
+            <div class="stat-card">
+                <div class="stat-info">
+                    <span class="stat-label">Budget Limit</span>
+                    <span class="stat-value counter-anim" data-target="{{ currency }}{{ monthly_budget|floatformat:2|intcomma }}">{{ currency }}0.00</span>
+                </div>
+                <div class="stat-icon-wrapper {% if budget_used_percentage > 90 %}stat-icon-danger{% else %}stat-icon-primary{% endif %}">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+            <div class="text-xs mt-2 text-muted fw-bold">
+                <span class="{% if budget_used_percentage > 90 %}text-danger{% else %}text-primary{% endif %}">{{ budget_used_percentage }}%</span> of limit used
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Cash Flow Overview -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card-premium h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="m-0 text-lg">Cash Flow History</h4>
+                <div class="text-xs text-muted fw-bold">LAST 6 MONTHS</div>
+            </div>
+            <div style="height: 320px; position: relative;">
+                <canvas id="overview-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chart 2: Category Distribution -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card-premium h-100">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="m-0 text-lg">Spending by Category</h4>
+                <div class="text-xs text-muted fw-bold">THIS MONTH</div>
+            </div>
+            <div style="height: 250px; position: relative;" class="mb-3">
+                {% if expenses_by_category %}
+                    <canvas id="category-chart"></canvas>
+                {% else %}
+                    <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                        <i class="fas fa-chart-pie fa-2x mb-2 text-secondary opacity-50"></i>
+                        <span class="text-sm">No expenses recorded this month</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Transactions List -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card-premium">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="m-0 text-lg">Recent Transactions</h4>
+                <a href="{% url 'expense-list' %}" class="btn-premium btn-premium-secondary py-1 px-3 text-xs">View All</a>
+            </div>
+            
+            {% if recent_transactions %}
+                <div class="table-premium-container">
+                    <table class="table-premium">
+                        <thead>
+                            <tr>
+                                <th>Details</th>
+                                <th>Category</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in recent_transactions %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="stat-icon-wrapper rounded-circle" style="width: 38px; height: 38px; background-color: {% if tx.transaction_type == 'income' %}rgba(16, 185, 129, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %}; color: {% if tx.transaction_type == 'income' %}var(--success){% else %}var(--danger){% endif %}; font-size: 0.95rem;">
+                                                {% if tx.transaction_type == 'income' %}
+                                                    <i class="fas fa-circle-down"></i>
+                                                {% else %}
+                                                    <i class="fas fa-circle-up"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ tx.description|default:"Untitled Transaction" }}</div>
+                                                <div class="text-xs text-muted">{{ tx.payment_method|default:"Unspecified" }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if tx.category %}
+                                            <span class="badge-premium" style="background-color: {{ tx.category.color }}15; color: {{ tx.category.color }};">
+                                                <i class="fas {{ tx.category.icon }} me-1"></i> {{ tx.category.name }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge-premium text-muted" style="background-color: var(--bg-input);">
+                                                <i class="fas fa-ellipsis-h me-1"></i> Uncategorized
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-sm text-secondary">{{ tx.date|date:"M d, Y" }}</td>
+                                    <td class="fw-bold {% if tx.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                        {% if tx.transaction_type == 'income' %}+{% else %}-{% endif %}{{ currency }}{{ tx.amount|intcomma }}
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a href="{% url 'update-expense' tx.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="fas fa-pencil"></i></a>
+                                            <a href="{% url 'delete-expense' tx.pk %}" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-receipt fa-3x mb-3 text-secondary opacity-20"></i>
+                    <h5>No Transactions Found</h5>
+                    <p class="text-sm mb-4">Start managing your cash flow by adding your first transaction.</p>
+                    <a href="{% url 'add-expense' %}" class="btn-premium btn-premium-primary text-sm">Add Transaction</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Active Budgets progress widget -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card-premium">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="m-0 text-lg">Active Budgets</h4>
+                <a href="{% url 'budget-list' %}" class="btn-premium btn-premium-secondary py-1 px-3 text-xs">Manage</a>
+            </div>
+            
+            {% if budget_vs_actual %}
+                <div class="d-flex flex-column gap-4">
+                    {% for item in budget_vs_actual %}
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold d-flex align-items-center gap-2">
+                                    <span class="category-dot" style="background-color: {{ item.color }};"></span>
+                                    {{ item.category }}
+                                </span>
+                                <span class="text-sm text-secondary">
+                                    <span class="fw-bold text-primary">{{ currency }}{{ item.spent|intcomma }}</span> of {{ currency }}{{ item.budget|intcomma }}
+                                </span>
+                            </div>
+                            <div class="budget-progress-bar-container">
+                                <div class="budget-progress-bar" style="width: {{ item.percentage }}%; background-color: {% if item.over_budget %}var(--danger){% else %}{{ item.color }}{% endif %};"></div>
+                            </div>
+                            {% if item.over_budget %}
+                                <div class="text-xs text-danger fw-bold mt-1">
+                                    <i class="fas fa-circle-exclamation me-1"></i> Over budget by {{ currency }}{{ item.over_budget_amount|floatformat:2|intcomma }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-bullseye fa-3x mb-3 text-secondary opacity-25"></i>
+                    <h5>No Budgets Set</h5>
+                    <p class="text-xs mb-4">Set limits on spending categories to reach your savings goals.</p>
+                    <a href="{% url 'add-budget' %}" class="btn-premium btn-premium-primary text-sm py-1 px-3">Set Budget</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Helper to do inline subtraction in budget card -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render Cash Flow Line Chart
+        renderOverviewChart(
+            'overview-chart', 
+            {{ chart_months|safe }}, 
+            {{ chart_income|safe }}, 
+            {{ chart_expense|safe }}
+        );
+        
+        // Render Category Pie Chart
+        {% if expenses_by_category %}
+            const catLabels = [{% for item in expenses_by_category %}"{{ item.category__name|default:'Uncategorized' }}",{% endfor %}];
+            const catValues = [{% for item in expenses_by_category %}{{ item.total|stringformat:".2f" }},{% endfor %}];
+            const catColors = [{% for item in expenses_by_category %}"{{ item.category__color|default:'#6B7280' }}",{% endfor %}];
+            renderCategoryDonutChart('category-chart', catLabels, catValues, catColors);
+        {% endif %}
+    });
+</script>
+{% endblock %}

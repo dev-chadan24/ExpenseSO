@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-5 col-lg-7 col-md-9">
+        <div class="card-premium">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <a href="{% url 'budget-list' %}" class="btn-premium btn-premium-secondary py-2 px-3 text-sm">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h2 class="m-0 text-xl font-outfit">{{ title }}</h2>
+            </div>
+            
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Category Select -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.category.id_for_label }}">Target Category</label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <div class="invalid-feedback d-block">{{ form.category.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Limit Amount -->
+                <div class="form-group-premium mb-3">
+                    <label class="form-label-premium" for="{{ form.amount.id_for_label }}">Limit Amount</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-transparent border-end-0 text-primary fw-bold">$</span>
+                        <input type="number" name="amount" step="0.01" class="form-control border-start-0 ps-1" id="{{ form.amount.id_for_label }}" value="{{ form.amount.value|default:'' }}" required>
+                    </div>
+                    {% if form.amount.errors %}
+                        <div class="invalid-feedback d-block">{{ form.amount.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Target Month -->
+                <div class="form-group-premium mb-4">
+                    <label class="form-label-premium" for="{{ form.month.id_for_label }}">Budget Month</label>
+                    {{ form.month }}
+                    <span class="text-xs text-secondary mt-1 d-block">Budget limits apply for the selected month (the day of the month is automatically set to the 1st).</span>
+                    {% if form.month.errors %}
+                        <div class="invalid-feedback d-block">{{ form.month.errors.as_text }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex justify-content-end gap-3 mt-4">
+                    <a href="{% url 'budget-list' %}" class="btn-premium btn-premium-secondary">
+                        Cancel
+                    </a>
+                    <button type="submit" class="btn-premium btn-premium-primary">
+                        Save Budget Limit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

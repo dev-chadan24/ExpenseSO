@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Transactions{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="m-0 text-xl font-outfit">Transactions</h2>
+        <p class="text-sm text-secondary m-0">View, search, and filter your financial cash flows</p>
+    </div>
+    <a href="{% url 'add-expense' %}" class="btn-premium btn-premium-primary">
+        <i class="fas fa-plus"></i> Add Transaction
+    </a>
+</div>
+
+<!-- Filter and Search Bar -->
+<div class="card-premium mb-4">
+    <form method="GET" action="{% url 'expense-list' %}" class="row g-3 align-items-end">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label-premium">Search Description</label>
+            <div class="input-group">
+                <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="fas fa-search"></i></span>
+                <input type="text" name="q" value="{{ request.GET.q|default:'' }}" class="form-control border-start-0 ps-0" placeholder="Search keywords...">
+            </div>
+        </div>
+        
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label-premium">Type</label>
+            {{ filter_form.transaction_type }}
+        </div>
+        
+        <div class="col-lg-2 col-md-6">
+            <label class="form-label-premium">Category</label>
+            {{ filter_form.category }}
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label-premium">Date Range</label>
+            <div class="d-flex align-items-center gap-2">
+                {{ filter_form.start_date }}
+                <span class="text-muted">to</span>
+                {{ filter_form.end_date }}
+            </div>
+        </div>
+        
+        <div class="col-lg-2 col-md-12 d-flex gap-2 justify-content-end">
+            <a href="{% url 'expense-list' %}" class="btn-premium btn-premium-secondary w-50 justify-content-center py-2 px-0 text-sm">
+                Reset
+            </a>
+            <button type="submit" class="btn-premium btn-premium-primary w-50 justify-content-center py-2 px-0 text-sm">
+                Filter
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Transactions Table Card -->
+<div class="card-premium">
+    {% if transactions %}
+        <div class="table-premium-container">
+            <table class="table-premium">
+                <thead>
+                    <tr>
+                        <th>Details</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Payment Method</th>
+                        <th>Amount</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="stat-icon-wrapper rounded-circle" style="width: 38px; height: 38px; background-color: {% if tx.transaction_type == 'income' %}rgba(16, 185, 129, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %}; color: {% if tx.transaction_type == 'income' %}var(--success){% else %}var(--danger){% endif %}; font-size: 0.95rem;">
+                                        {% if tx.transaction_type == 'income' %}
+                                            <i class="fas fa-circle-down"></i>
+                                        {% else %}
+                                            <i class="fas fa-circle-up"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ tx.description|default:"Untitled Transaction" }}</div>
+                                        {% if tx.is_recurring %}
+                                            <div class="text-xs text-primary fw-bold"><i class="fas fa-arrows-spin me-1"></i> Recurring ({{ tx.recurrence_frequency|title }})</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if tx.category %}
+                                    <span class="badge-premium" style="background-color: {{ tx.category.color }}15; color: {{ tx.category.color }};">
+                                        <i class="fas {{ tx.category.icon }} me-1"></i> {{ tx.category.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge-premium text-muted" style="background-color: var(--bg-input);">
+                                        <i class="fas fa-ellipsis-h me-1"></i> Uncategorized
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-sm text-secondary">{{ tx.date|date:"M d, Y" }}</td>
+                            <td class="text-sm text-secondary">{{ tx.payment_method|default:"—" }}</td>
+                            <td class="fw-bold {% if tx.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %}">
+                                {% if tx.transaction_type == 'income' %}+{% else %}-{% endif %}{{ currency }}{{ tx.amount|intcomma }}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'update-expense' tx.pk %}" class="btn btn-sm btn-outline-secondary" title="Edit"><i class="fas fa-pencil"></i></a>
+                                    <a href="{% url 'delete-expense' tx.pk %}" class="btn btn-sm btn-outline-danger" title="Delete"><i class="fas fa-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-receipt fa-4x mb-3 text-secondary opacity-25"></i>
+            <h5>No Transactions Recorded</h5>
+            <p class="text-sm mb-4">No records found matching your filters or search keywords.</p>
+            <a href="{% url 'add-expense' %}" class="btn-premium btn-premium-primary text-sm">Add Transaction</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

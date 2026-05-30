@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Financial Reports{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="m-0 text-xl font-outfit">Financial Reports</h2>
+        <p class="text-sm text-secondary m-0">Generate overview statistics and download CSV data records</p>
+    </div>
+    
+    <!-- Export CSV button with request parameters -->
+    <a href="{% url 'export-csv' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}" class="btn-premium btn-premium-secondary">
+        <i class="fas fa-download"></i> Export CSV
+    </a>
+</div>
+
+<!-- Date Picker Filters -->
+<div class="card-premium mb-4">
+    <form method="POST" class="row g-3 align-items-end">
+        {% csrf_token %}
+        <div class="col-md-5">
+            <label class="form-label-premium">Start Date</label>
+            {{ form.start_date }}
+        </div>
+        <div class="col-md-5">
+            <label class="form-label-premium">End Date</label>
+            {{ form.end_date }}
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn-premium btn-premium-primary w-100 justify-content-center py-2 px-0">
+                <i class="fas fa-rotate"></i> Generate
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Highlight Stat Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card-premium h-100 text-center">
+            <span class="stat-label">Income in Range</span>
+            <span class="stat-value text-success mt-1 d-block">{{ currency }}{{ total_income|floatformat:2|intcomma }}</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card-premium h-100 text-center">
+            <span class="stat-label">Expenses in Range</span>
+            <span class="stat-value text-danger mt-1 d-block">{{ currency }}{{ total_expense|floatformat:2|intcomma }}</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card-premium h-100 text-center">
+            <span class="stat-label">Daily Average Spending</span>
+            <span class="stat-value text-primary mt-1 d-block">{{ currency }}{{ daily_avg|floatformat:2|intcomma }}</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Chart Overview timeline -->
+    <div class="col-lg-8">
+        <div class="card-premium h-100">
+            <h4 class="text-md fw-bold mb-4">Cash Flow Timeline</h4>
+            <div style="height: 300px; position: relative;">
+                <canvas id="timeline-chart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Category breakdown table -->
+    <div class="col-lg-4">
+        <div class="card-premium h-100">
+            <h4 class="text-md fw-bold mb-4">Category Expenses Breakdown</h4>
+            
+            {% if by_category %}
+                <div class="d-flex flex-column gap-3">
+                    {% for item in by_category %}
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-semibold text-sm d-flex align-items-center gap-2">
+                                    <span class="category-dot" style="background-color: {{ item.category__color }};"></span>
+                                    {{ item.category__name }}
+                                </span>
+                                <span class="text-xs text-muted fw-bold">{{ currency }}{{ item.total|intcomma }} ({{ item.percentage }}%)</span>
+                            </div>
+                            <div class="budget-progress-bar-container" style="height: 6px;">
+                                <div class="budget-progress-bar" style="width: {{ item.percentage }}%; background-color: {{ item.category__color }};"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted py-5">
+                    <i class="fas fa-chart-pie fa-2x mb-2 text-secondary opacity-50"></i>
+                    <span class="text-sm">No expenses in selected range</span>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Included Transactions table -->
+<div class="card-premium">
+    <h4 class="text-md fw-bold mb-4">Included Transactions List ({{ transactions.count }})</h4>
+    {% if transactions %}
+        <div class="table-premium-container">
+            <table class="table-premium">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Type</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Method</th>
+                        <th class="text-end">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                        <tr>
+                            <td class="fw-bold">{{ tx.description|default:"Untitled" }}</td>
+                            <td>
+                                <span class="badge-premium {% if tx.transaction_type == 'income' %}badge-income{% else %}badge-expense{% endif %}">
+                                    {{ tx.transaction_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if tx.category %}
+                                    <span class="badge-premium" style="background-color: {{ tx.category.color }}15; color: {{ tx.category.color }};">
+                                        <i class="fas {{ tx.category.icon }} me-1"></i> {{ tx.category.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge-premium text-muted" style="background-color: var(--bg-input);">
+                                        <i class="fas fa-ellipsis-h me-1"></i> Uncategorized
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-sm text-secondary">{{ tx.date|date:"M d, Y" }}</td>
+                            <td class="text-sm text-secondary">{{ tx.payment_method|default:"—" }}</td>
+                            <td class="fw-bold {% if tx.transaction_type == 'income' %}text-success{% else %}text-danger{% endif %} text-end">
+                                {% if tx.transaction_type == 'income' %}+{% else %}-{% endif %}{{ currency }}{{ tx.amount|intcomma }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <p class="m-0 text-sm">No transactions found inside this date range.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Helpers from charts.js to render range charts -->
+<script src="{% static 'js/charts.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Render Line chart for reports range
+        const dates = {{ chart_dates|safe }};
+        const income = {{ chart_income|safe }};
+        const expense = {{ chart_expense|safe }};
+        
+        if (dates.length > 0) {
+            renderOverviewChart('timeline-chart', dates, income, expense);
+        }
+    });
+</script>
+{% endblock %}

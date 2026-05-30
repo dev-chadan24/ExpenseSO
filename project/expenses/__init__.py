@@ -1,0 +1,1 @@
+# Initialize expenses app
